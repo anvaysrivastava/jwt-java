@@ -32,7 +32,7 @@ public class SharedSecretJWTEncoderTest {
     @Test
     public void testTimeSensitivity() throws InterruptedException {
         String secret = "Secret";
-        String token = jwtEncoder.getTimeSensitiveEmptyToken(secret, 2000);
+        String token = jwtEncoder.getTimeSensitiveEmptyToken(secret, 600000);
         System.out.println(token);
         Assert.assertTrue(jwtEncoder.isValidToken(secret, token));
         Thread.sleep(5000);

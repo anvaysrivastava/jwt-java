@@ -7,7 +7,16 @@ import com.auth0.jwt.exceptions.JWTCreationException;
 import com.auth0.jwt.exceptions.JWTVerificationException;
 import com.auth0.jwt.interfaces.DecodedJWT;
 import org.apache.commons.codec.binary.Base64;
+import org.bouncycastle.asn1.ASN1EncodableVector;
+import org.bouncycastle.asn1.ASN1Integer;
+import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.asn1.ASN1Sequence;
+import org.bouncycastle.asn1.DERNull;
+import org.bouncycastle.asn1.DEROctetString;
+import org.bouncycastle.asn1.DERSequence;
+import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 
+import java.io.IOException;
 import java.security.Key;
 import java.security.KeyFactory;
 import java.security.KeyPair;
@@ -79,6 +88,34 @@ public class RSAJWTEncoder {
         byte[] rawKey = Base64.decodeBase64(base64Key);
 
         PKCS8EncodedKeySpec ks = new PKCS8EncodedKeySpec(rawKey);
+        KeyFactory kf = null;
+        try {
+            kf = KeyFactory.getInstance("RSA");
+            return kf.generatePrivate(ks);
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+            return null;
+        } catch (InvalidKeySpecException e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    public PrivateKey getPrivateKeyFromPEMKey(String base64Key) throws IOException {
+        byte[] rawKey = Base64.decodeBase64(base64Key);
+
+        /* Add PKCS#8 formatting */
+        ASN1EncodableVector v = new ASN1EncodableVector();
+        v.add(new ASN1Integer(0));
+        ASN1EncodableVector v2 = new ASN1EncodableVector();
+        v2.add(new ASN1ObjectIdentifier(PKCSObjectIdentifiers.rsaEncryption.getId()));
+        v2.add(DERNull.INSTANCE);
+        v.add(new DERSequence(v2));
+        v.add(new DEROctetString(rawKey));
+        ASN1Sequence seq = new DERSequence(v);
+        byte[] privKey = seq.getEncoded("DER");
+
+        PKCS8EncodedKeySpec ks = new PKCS8EncodedKeySpec(privKey);
         KeyFactory kf = null;
         try {
             kf = KeyFactory.getInstance("RSA");
